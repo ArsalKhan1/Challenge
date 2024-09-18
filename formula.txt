@@ -1,4 +1,2 @@
-=IF(TRIM(A2)="", "Empty or Whitespace-only", 
-IF(LEFT(A2,LEN(A2)-LEN(TRIM(A2)))<>"", "Leading Whitespace", 
-IF(RIGHT(A2,LEN(A2)-LEN(TRIM(A2)))<>"", "Trailing Whitespace", 
-IF(SEARCH("  ", A2), "Excessive Middle Whitespace", "No issue"))))
+=IF(AND(ISTEXT(A2), OR(LEFT(A2,1)=" ", RIGHT(A2,1)=" ")), 1, 0)
+=IF(AND(ISTEXT(A2), OR(LEFT(A2,1)=" ", RIGHT(A2,1)=" ", ISNUMBER(SEARCH("  ", A2))), 1, 0)
