@@ -10,36 +10,53 @@ model = DistilBertForSequenceClassification.from_pretrained('distilbert-base-unc
 
 
 # 5. Preprocessing the data
-# You will need to tokenize your data before feeding it into the model. 
-# Use the datasets library to load and preprocess your data.
-# training data
 import pandas as pd
 from datasets import Dataset
+from transformers import DistilBertTokenizer
 
-# Load training data from S3
-train_df = pd.read_csv('./jigsaw-unintended-bias-train-modified.csv')
+# Load tokenizer
+tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
 
-# Remove rows with missing data
-train_df.dropna(inplace=True)
+# Load training data from your SageMaker notebook environment
+train_df = pd.read_csv('./jigsaw-uninted-bias-train-modified.csv')
+
+# 1. Check for and handle invalid entries in the 'toxic' column
+
+# Convert the 'toxic' column to numeric, coercing errors
+train_df['toxic'] = pd.to_numeric(train_df['toxic'], errors='coerce')
+
+# Drop rows where conversion failed (i.e., NaN values in the 'toxic' column)
+train_df.dropna(subset=['toxic'], inplace=True)
+
+# Optional: You may also want to ensure other columns are correctly converted
+# Example: Handling the 'severe_toxicity', 'obscene', etc. columns similarly
+columns_to_check = ['severe_toxicity', 'obscene', 'identity_attack', 'insult', 'threat']
+for col in columns_to_check:
+    train_df[col] = pd.to_numeric(train_df[col], errors='coerce')
+    train_df.dropna(subset=[col], inplace=True)
+
+# 2. Remove any unnecessary columns if required (e.g., unnamed or empty columns)
+train_df.dropna(how='all', inplace=True)
 
 # Convert the training data into a dataset for easier tokenization
 train_dataset = Dataset.from_pandas(train_df)
 
-# Tokenize the training data
+# 3. Tokenize the training data
 def preprocess_function(examples):
     return tokenizer(examples['comment_text'], truncation=True, padding=True)
 
 tokenized_train = train_dataset.map(preprocess_function, batched=True)
 
-#validation data
-# Load validation data
+# Load and preprocess validation data similarly
 val_df = pd.read_csv('./validation.csv')
+val_df.dropna(how='any', inplace=True)  # Ensure there are no missing values in validation data
 
-# Use only 'comment_text' and 'toxic' columns
+# Use only 'comment_text' and 'toxic' columns for validation
 val_dataset = Dataset.from_pandas(val_df[['comment_text', 'toxic']])
 
 # Tokenize the validation data
 tokenized_val = val_dataset.map(preprocess_function, batched=True)
+
 
 
 
