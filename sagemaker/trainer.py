@@ -17,7 +17,7 @@ import pandas as pd
 from datasets import Dataset
 
 # Load training data from S3
-train_df = pd.read_csv('s3://your-bucket/jigsaw-uninted-bias-train-modified.csv')
+train_df = pd.read_csv('./jigsaw-unintended-bias-train-modified.csv')
 
 # Remove rows with missing data
 train_df.dropna(inplace=True)
@@ -33,7 +33,7 @@ tokenized_train = train_dataset.map(preprocess_function, batched=True)
 
 #validation data
 # Load validation data
-val_df = pd.read_csv('s3://your-bucket/validation.csv')
+val_df = pd.read_csv('./validation.csv')
 
 # Use only 'comment_text' and 'toxic' columns
 val_dataset = Dataset.from_pandas(val_df[['comment_text', 'toxic']])
@@ -80,7 +80,9 @@ eval_results = trainer.evaluate()
 print(f"Evaluation results: {eval_results}")
 
 # Saving the model
-# trainer.save_model('s3://your-bucket/distilbert-finetuned-model')
+model_save_path = './distilbert-finetuned-model'
+trainer.save_model(model_save_path)
+
 
 
 # 9. Inference
