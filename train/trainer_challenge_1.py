@@ -8,15 +8,21 @@ import torch.nn.functional as F
 import time  # Import time library for tracking epoch duration
 
 # Configuration
-device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.backends.mps.is_available():
+    device = torch.device("mps")
+    print("mps selected!")
+else:
+    print("mps not found")
+
 model_name = "bert-base-uncased"
-batch_size = 16  # Increased from 8 to 16
+batch_size = 16  # increased from 8 to 16
 epochs = 3
 learning_rate = 2e-5
 max_length = 128
 
 # Load data
-data = pd.read_csv("challenge_1_train.csv")
+data = pd.read_csv("../jigsaw-toxic-comment-classification-challenge/challenge_1_train.csv")
+data = data.head(100)
 
 # Prepare Dataset class
 class ToxicCommentsDataset(Dataset):
@@ -134,7 +140,7 @@ for epoch in range(epochs):
     print(f'Epoch {epoch + 1} completed in {epoch_time:.2f} seconds - IT/s: {len(train_loader) / epoch_time:.2f}')
 
 # Save the model
-model.save_pretrained("toxic-comment-model")
-tokenizer.save_pretrained("toxic-comment-model")
+model.save_pretrained("bert-base-uncased-challenge-1")
+tokenizer.save_pretrained("bert-base-uncased-challenge-1")
 
-print("Model and tokenizer saved to 'toxic-comment-model'.")
+print("Model and tokenizer saved to 'bert-base-uncased-challenge-1'.")
