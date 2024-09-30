@@ -1,0 +1,111 @@
+/* General Styling */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%; /* Ensure body and html take up full height */
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+/* Navbar (Header) */
+.navbar {
+    background-color: #5FA8D3; /* Updated header background color */
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000; /* Ensure it stays above other content */
+    height: 60px; /* Define a fixed height for the navbar */
+}
+
+/* Content Container */
+.content-container {
+    margin-top: 60px; /* Push content below the fixed navbar */
+    margin-bottom: 70px; /* Add space above the footer */
+    padding: 15px; /* Standard padding */
+    height: calc(100vh - 130px); /* Set dynamic height based on navbar and footer */
+    overflow-y: auto; /* Allow scrolling within the content container */
+}
+
+/* Chat Bubble */
+.chat-bubble {
+    max-width: 60%;
+    background-color: #D9EFFA; /* Updated chat bubble background color */
+    border: 1px solid #ddd;
+    border-radius: 25px; /* Increase border radius */
+    padding: 15px; /* Add padding */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow for a polished look */
+    margin-right: 20px; /* Spacing to the right */
+    position: relative;
+    display: flex; /* Use flexbox */
+    align-items: center; /* Vertically center text */
+}
+
+/* Card Box */
+.card-box {
+    border-radius: 25px; /* Increase border radius for rounded corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    padding: 15px; /* Additional padding */
+    background-color: #ffffff; /* White background */
+    margin-bottom: 20px; /* Spacing between cards */
+}
+
+/* Response Section */
+.response-section {
+    background-color: #f1f1f1; /* Light grey background */
+    border-radius: 20px; /* Rounded corners for each section */
+    padding: 15px; /* Padding inside section */
+    margin-bottom: 10px; /* Reduce space between sections */
+}
+
+/* Footer Input Form */
+.footer-form {
+    background-color: #ffffff; /* White background */
+    border-top: 1px solid #ddd;
+    border-radius: 25px; /* Increased rounded corners */
+    padding: 15px; /* Padding inside the form */
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1); /* Shadow at the top */
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 70px; /* Define a fixed height for the footer */
+    z-index: 1000; /* Ensure it stays above other content */
+}
+
+/* Input Field */
+.input-rounded {
+    border-radius: 25px; /* Increased rounded corners for input field */
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1); /* Inner shadow for depth */
+    height: 48px; /* Set height to match button */
+}
+
+/* Button Styling */
+.btn-rounded {
+    border-radius: 25px; /* Increased rounded corners for button */
+    padding: 8px 20px; /* Adjust padding */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Button shadow */
+    background-color: #5FA8D3; /* Updated button color */
+    border: none; /* Remove border */
+    height: 48px; /* Match the height of input field */
+    line-height: 1.5; /* Adjust line height for button text */
+}
+
+/* Navbar Title */
+.title {
+    font-size: 1.7rem; /* Make title larger */
+    margin-right: auto; /* Push tabs to the right */
+}
+
+/* Styling for navigation tabs */
+.nav-item {
+    color: white;
+    padding: 10px 15px;
+    margin: 0 5px;
+}
+
+.nav-item:hover {
+    background-color: #5a5a5a; /* Change to lighter shade on hover */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
