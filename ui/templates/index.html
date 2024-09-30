@@ -11,7 +11,7 @@
 </head>
 <body>
     <!-- Header with Navigation Tabs -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container d-flex justify-content-between">
             <!-- Title on the left side -->
             <span class="navbar-brand mb-0 h1 title">Abusive Language Detection</span>
@@ -25,13 +25,13 @@
     </nav>
 
     <!-- Main Container (padding to prevent overlap with header and footer) -->
-    <div class="container mt-5 pt-4 content-container">
+    <div id="content-container" class="container mt-5 pt-4 content-container">
         <!-- Display Previous Input Messages and Results -->
         {% for entry in message_history %}
             <!-- Chat Bubble with Input Message -->
             <div class="d-flex justify-content-end mb-3">
                 <div class="chat-bubble">
-                    <p><em>{{ entry['message'] }}</em></p> <!-- Italicize input message -->
+                    <p><em>{{ entry['message'] }}</em></p>
                 </div>
             </div>
 
@@ -43,34 +43,32 @@
                     <div class="response-section level-one">
                         <h6 class="text-dark">
                             <strong>Level 1: Clean or Toxic?</strong> 
-                            <span style="color: {{ 'green' if entry['result']['toxic'] < 0.5 else 'red' }}">
+                            <span class="{{ 'text-green' if entry['result']['toxic'] < 0.5 else 'text-red' }}">
                                 {{ 'Clean' if entry['result']['toxic'] < 0.5 else 'Toxic' }}
                             </span>
-                            <strong style="color: {{ 'green' if entry['result']['toxic'] < 0.5 else 'red' }}">
-                                ({{ '%.2f'|format(entry['result']['toxic']*100) }}%)
+                            <strong class="{{ 'text-green' if entry['result']['toxic'] < 0.5 else 'text-red' }}">
+                                ({{ '%.2f' % (entry['result']['toxic'] * 100) }}%)
                             </strong>
                         </h6>
-
                         <!-- Level 1 Progress Bar -->
                         <div class="progress mb-2">
-                            <div class="progress-bar" role="progressbar" style="width: {{ entry['result']['toxic']*100 }}%; background-color: {{ 'green' if entry['result']['toxic'] < 0.5 else 'red' }};" aria-valuenow="{{ entry['result']['toxic']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar {{ 'progress-bar-green' if entry['result']['toxic'] < 0.5 else 'progress-bar-red' }}" role="progressbar" style="width: {{ entry['result']['toxic']*100 }}%;" aria-valuenow="{{ entry['result']['toxic']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </div>
 
                     <!-- Level 2 Section -->
                     <div class="response-section level-two">
                         <h6 class="text-dark"><strong>Level 2: Severe Toxic?</strong> 
-                            <span style="color: {{ 'red' if entry['result']['severe_toxic'] >= 0.5 else 'green' }}">
+                            <span class="{{ 'text-red' if entry['result']['severe_toxic'] >= 0.5 else 'text-green' }}">
                                 {{ 'True' if entry['result']['severe_toxic'] >= 0.5 else 'False' }}
                             </span>
-                            <strong style="color: {{ 'red' if entry['result']['severe_toxic'] >= 0.5 else 'green' }}">
+                            <strong class="{{ 'text-red' if entry['result']['severe_toxic'] >= 0.5 else 'text-green' }}">
                                 ({{ '%.2f' % (entry['result']['severe_toxic'] * 100) }}%) 
                             </strong>
                         </h6>
-
                         <!-- Level 2 Progress Bar -->
                         <div class="progress mb-2">
-                            <div class="progress-bar" role="progressbar" style="width: {{ entry['result']['severe_toxic']*100 }}%; background-color: {{ 'green' if entry['result']['severe_toxic'] < 0.5 else 'red' }};" aria-valuenow="{{ entry['result']['severe_toxic']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar {{ 'progress-bar-green' if entry['result']['severe_toxic'] < 0.5 else 'progress-bar-red' }}" role="progressbar" style="width: {{ entry['result']['severe_toxic']*100 }}%;" aria-valuenow="{{ entry['result']['severe_toxic']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </div>
 
@@ -78,44 +76,48 @@
                     <div class="response-section level-three">
                         <h6 class="text-dark"><strong>Level 3: Additional Abuse Qualifiers</strong></h6>
 
+                        <!-- Obscene -->
                         <p class="qualifier-label">Obscene: 
-                            <span style="color: {{ 'red' if entry['result']['obscene'] >= 0.5 else 'green' }}">
+                            <span class="{{ 'text-red' if entry['result']['obscene'] >= 0.5 else 'text-green' }}">
                                 {{ 'True' if entry['result']['obscene'] >= 0.5 else 'False' }}
                             </span>
-                            <strong style="color: {{ 'red' if entry['result']['obscene'] >= 0.5 else 'green' }}">({{ '%.2f' % (entry['result']['obscene'] * 100) }}%)</strong> <!-- Correct format applied here -->
+                            <strong class="{{ 'text-red' if entry['result']['obscene'] >= 0.5 else 'text-green' }}">({{ '%.2f' % (entry['result']['obscene'] * 100) }}%)</strong>
                         </p>
                         <div class="progress mb-1">
-                            <div class="progress-bar" role="progressbar" style="width: {{ entry['result']['obscene']*100 }}%; background-color: {{ 'green' if entry['result']['obscene'] < 0.5 else 'red' }};" aria-valuenow="{{ entry['result']['obscene']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar {{ 'progress-bar-green' if entry['result']['obscene'] < 0.5 else 'progress-bar-red' }}" role="progressbar" style="width: {{ entry['result']['obscene']*100 }}%;" aria-valuenow="{{ entry['result']['obscene']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
 
+                        <!-- Threat -->
                         <p class="qualifier-label">Threat: 
-                            <span style="color: {{ 'red' if entry['result']['threat'] >= 0.5 else 'green' }}">
+                            <span class="{{ 'text-red' if entry['result']['threat'] >= 0.5 else 'text-green' }}">
                                 {{ 'True' if entry['result']['threat'] >= 0.5 else 'False' }}
                             </span>
-                            <strong style="color: {{ 'red' if entry['result']['threat'] >= 0.5 else 'green' }}">({{ '%.2f' % (entry['result']['threat'] * 100) }}%)</strong> <!-- Correct format applied here -->
+                            <strong class="{{ 'text-red' if entry['result']['threat'] >= 0.5 else 'text-green' }}">({{ '%.2f' % (entry['result']['threat'] * 100) }}%)</strong>
                         </p>
                         <div class="progress mb-1">
-                            <div class="progress-bar" role="progressbar" style="width: {{ entry['result']['threat']*100 }}%; background-color: {{ 'green' if entry['result']['threat'] < 0.5 else 'red' }};" aria-valuenow="{{ entry['result']['threat']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar {{ 'progress-bar-green' if entry['result']['threat'] < 0.5 else 'progress-bar-red' }}" role="progressbar" style="width: {{ entry['result']['threat']*100 }}%;" aria-valuenow="{{ entry['result']['threat']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
 
+                        <!-- Insult -->
                         <p class="qualifier-label">Insult: 
-                            <span style="color: {{ 'red' if entry['result']['insult'] >= 0.5 else 'green' }}">
+                            <span class="{{ 'text-red' if entry['result']['insult'] >= 0.5 else 'text-green' }}">
                                 {{ 'True' if entry['result']['insult'] >= 0.5 else 'False' }}
                             </span>
-                            <strong style="color: {{ 'red' if entry['result']['insult'] >= 0.5 else 'green' }}">({{ '%.2f' % (entry['result']['insult'] * 100) }}%)</strong> <!-- Correct format applied here -->
+                            <strong class="{{ 'text-red' if entry['result']['insult'] >= 0.5 else 'text-green' }}">({{ '%.2f' % (entry['result']['insult'] * 100) }}%)</strong>
                         </p>
                         <div class="progress mb-1">
-                            <div class="progress-bar" role="progressbar" style="width: {{ entry['result']['insult']*100 }}%; background-color: {{ 'green' if entry['result']['insult'] < 0.5 else 'red' }};" aria-valuenow="{{ entry['result']['insult']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar {{ 'progress-bar-green' if entry['result']['insult'] < 0.5 else 'progress-bar-red' }}" role="progressbar" style="width: {{ entry['result']['insult']*100 }}%;" aria-valuenow="{{ entry['result']['insult']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
 
+                        <!-- Identity Hate -->
                         <p class="qualifier-label">Identity Hate: 
-                            <span style="color: {{ 'red' if entry['result']['identity_hate'] >= 0.5 else 'green' }}">
+                            <span class="{{ 'text-red' if entry['result']['identity_hate'] >= 0.5 else 'text-green' }}">
                                 {{ 'True' if entry['result']['identity_hate'] >= 0.5 else 'False' }}
                             </span>
-                            <strong style="color: {{ 'red' if entry['result']['identity_hate'] >= 0.5 else 'green' }}">({{ '%.2f' % (entry['result']['identity_hate'] * 100) }}%)</strong> <!-- Correct format applied here -->
+                            <strong class="{{ 'text-red' if entry['result']['identity_hate'] >= 0.5 else 'text-green' }}">({{ '%.2f' % (entry['result']['identity_hate'] * 100) }}%)</strong>
                         </p>
                         <div class="progress mb-1">
-                            <div class="progress-bar" role="progressbar" style="width: {{ entry['result']['identity_hate']*100 }}%; background-color: {{ 'green' if entry['result']['identity_hate'] < 0.5 else 'red' }};" aria-valuenow="{{ entry['result']['identity_hate']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar {{ 'progress-bar-green' if entry['result']['identity_hate'] < 0.5 else 'progress-bar-red' }}" role="progressbar" style="width: {{ entry['result']['identity_hate']*100 }}%;" aria-valuenow="{{ entry['result']['identity_hate']*100 }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </div>
                 </div>
@@ -139,6 +141,15 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    
+
+    <!-- Custom JavaScript for Auto-Scroll -->
+    <script>
+        function scrollToBottom() {
+            var contentContainer = document.getElementById('content-container');
+            contentContainer.scrollTop = contentContainer.scrollHeight;  // Scroll to bottom
+        }
+        window.onload = scrollToBottom;
+        setTimeout(scrollToBottom, 100);
+    </script>
 </body>
 </html>
