@@ -10,11 +10,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <!-- Header with Navigation Tabs (Same as "Detector" tab) -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
-        <div class="container d-flex justify-content-between">
+    <!-- Header with Navigation Tabs -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid d-flex justify-content-between"> <!-- Use container-fluid for full width -->
             <!-- Title on the left side -->
-            <span class="navbar-brand mb-0 h1 title">Abusive Language Detection</span>
+            <span class="navbar-brand mb-0 h1 title">Abuse Detection</span> <!-- Updated title in header -->
 
             <!-- Tabs aligned horizontally on the right side -->
             <div class="navbar-nav">
