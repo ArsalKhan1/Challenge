@@ -1,17 +1,17 @@
 # Install necessary packages
 !pip install torch datasets
 
-import numpy as np
-import pandas as pd
+import os
 import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from transformers import BertTokenizer, BertForSequenceClassification
+from torch.utils.data import DataLoader, DistributedSampler
 from sklearn.model_selection import train_test_split
 from torch.optim import AdamW
 from torch.cuda.amp import GradScaler
-from torch.utils.data import Dataset, DataLoader, DistributedSampler
-import os
+import pandas as pd
+import numpy as np
 from datetime import datetime
 from tqdm import tqdm
 
@@ -26,14 +26,28 @@ CONFIG = {
     "output_model_dir": "trained_models/jigsaw-toxic-comment-bert",
     "num_workers": 2,
     "pin_memory": True,
-    "device": "cuda"
+    "device": "cuda",
+    "shared_file": "/tmp/sharedfile"  # Shared file for rendezvous
 }
 
-# Initialize Distributed Process Group
-dist.init_process_group(backend='nccl')
+# Initialize Distributed Process Group with file-based rendezvous
+if 'WORLD_SIZE' in os.environ:
+    dist.init_process_group(
+        backend='nccl',
+        init_method=f'file://{CONFIG["shared_file"]}',
+        world_size=int(os.environ['WORLD_SIZE']),
+        rank=int(os.environ['RANK'])
+    )
+else:
+    dist.init_process_group(
+        backend='nccl',
+        init_method=f'file://{CONFIG["shared_file"]}',
+        world_size=torch.cuda.device_count(),
+        rank=0  # Assuming the notebook is running the main process
+    )
 
-# Dataset class remains the same
-class ToxicCommentDataset(Dataset):
+# -----
+class ToxicCommentDataset(torch.utils.data.Dataset):
     def __init__(self, texts, labels, tokenizer, max_len=128):
         self.texts = texts
         self.labels = labels
@@ -62,12 +76,15 @@ class ToxicCommentDataset(Dataset):
         }
 
 # -----
-# Function to load the dataset
+# Check device
+device = torch.device(CONFIG['device'])
+
+# Load dataset
 def load_data(file_path):
     try:
         data = pd.read_csv(file_path)
         if data.empty:
-            raise ValueError("The DataFrame is empty. Please check the CSV file content.")
+            raise ValueError("The DataFrame is empty. Please check the CSV file content")
         print(data.shape)
         data['label'] = data[['toxic', 'severe_toxic', 'obscene', 'identity_hate', 'insult', 'threat']].values.tolist()
         return data
@@ -75,24 +92,6 @@ def load_data(file_path):
         print(f"Error loading data: {e}")
         return pd.DataFrame(columns=['comment_text', 'label'])
 
-# Function to get the model and tokenizer
-def get_model_and_tokenizer(model_type):
-    if model_type == "distilbert":
-        tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
-        model = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=6)
-    elif model_type == "albert":
-        tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
-        model = AlbertForSequenceClassification.from_pretrained('albert-base-v2', num_labels=6)
-    else:  # Default to BERT
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=6)
-    return model, tokenizer
-
-# -----
-# Check device
-device = torch.device(CONFIG['device'])
-
-# Load data
 print("Loading Data...")
 data = load_data(CONFIG['data_file'])
 print("Splitting into train & val datasets...")
@@ -103,6 +102,7 @@ train_texts, val_texts, train_labels, val_labels = train_test_split(
     random_state=42
 )
 
+# -----
 # Get model and tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=6)
@@ -124,11 +124,10 @@ val_sampler = DistributedSampler(val_dataset)
 val_loader = DataLoader(val_dataset, batch_size=CONFIG['batch_size'], num_workers=CONFIG['num_workers'],
                         pin_memory=CONFIG['pin_memory'], sampler=val_sampler)
 
-# Define optimizer
+# Define optimizer and GradScaler
 optimizer = AdamW(model.parameters(), lr=CONFIG['learning_rate'])
 scaler = GradScaler()
 
-# -----
 # Training loop
 print("start_time:", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 start_time = time.time()
@@ -158,23 +157,11 @@ for epoch in range(CONFIG['num_epochs']):
     avg_train_loss = train_loss / len(train_loader)
     print(f"Epoch {epoch + 1}/{CONFIG['num_epochs']}, Training Loss: {avg_train_loss:.4f}")
 
-    # Validation code remains the same...
-
-# -----
-print("Finished")
-
-end_time = time.time()
-print("end_time:", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-time_taken = (end_time - start_time) * 1000  # Convert to milliseconds
-print(f"\nTotal time: {time_taken // (1000*60*60*24):d}d {(time_taken // (1000*60*60)) % 24:.0f}h "
-      f"{(time_taken // (1000*60)) % 60:.0f}m {(time_taken // 1000) % 60:.0f}s")
-
-# -----
 # Save the model (only by the main process)
 if dist.get_rank() == 0:
     if not os.path.exists(CONFIG['output_model_dir']):
         os.makedirs(CONFIG['output_model_dir'])
-    model.module.save_pretrained(CONFIG['output_model_dir'])  # Save only the base model
+    model.module.save_pretrained(CONFIG['output_model_dir'])
     tokenizer.save_pretrained(CONFIG['output_model_dir'])
 
     print("Model saved to disk.")
