@@ -1,12 +1,10 @@
 # Install necessary packages
-!pip install torch datasets smdistributed.dataparallel
-
-# -----
+!pip install torch datasets
 
 import numpy as np
 import pandas as pd
 import torch
-import smdistributed.dataparallel.torch.torch_distributed as dist
+import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from transformers import BertTokenizer, BertForSequenceClassification
 from sklearn.model_selection import train_test_split
@@ -30,6 +28,9 @@ CONFIG = {
     "pin_memory": True,
     "device": "cuda"
 }
+
+# Initialize Distributed Process Group
+dist.init_process_group(backend='nccl')
 
 # Dataset class remains the same
 class ToxicCommentDataset(Dataset):
@@ -59,12 +60,14 @@ class ToxicCommentDataset(Dataset):
             'attention_mask': encoding['attention_mask'].flatten(),
             'labels': labels
         }
+
 # -----
+# Function to load the dataset
 def load_data(file_path):
     try:
         data = pd.read_csv(file_path)
         if data.empty:
-            raise ValueError("The DataFrame is empty. Please chaekc the CSV file conetent")
+            raise ValueError("The DataFrame is empty. Please check the CSV file content.")
         print(data.shape)
         data['label'] = data[['toxic', 'severe_toxic', 'obscene', 'identity_hate', 'insult', 'threat']].values.tolist()
         return data
@@ -72,6 +75,7 @@ def load_data(file_path):
         print(f"Error loading data: {e}")
         return pd.DataFrame(columns=['comment_text', 'label'])
 
+# Function to get the model and tokenizer
 def get_model_and_tokenizer(model_type):
     if model_type == "distilbert":
         tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
@@ -91,7 +95,7 @@ device = torch.device(CONFIG['device'])
 # Load data
 print("Loading Data...")
 data = load_data(CONFIG['data_file'])
-print("Splitting to train & val datasets")
+print("Splitting into train & val datasets...")
 train_texts, val_texts, train_labels, val_labels = train_test_split(
     data['comment_text'].tolist(),
     data['label'].tolist(),
@@ -99,15 +103,15 @@ train_texts, val_texts, train_labels, val_labels = train_test_split(
     random_state=42
 )
 
-# -----
 # Get model and tokenizer
-tokenizer = BertTokenizer.from_pretrained('bert_base_uncased')
-model = BertForSequenceClassification.from_pretrained('bert_base_uncased', num_labels=6)
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=6)
 
 # Move model to device and wrap with DistributedDataParallel
 model.to(device)
-model = DDP(model, device_ids=[device])
+model = DDP(model, device_ids=[torch.cuda.current_device()])
 
+# -----
 # Create datasets and loaders with DistributedSampler
 train_dataset = ToxicCommentDataset(train_texts, train_labels, tokenizer, max_len=CONFIG['max_len'])
 val_dataset = ToxicCommentDataset(val_texts, val_labels, tokenizer, max_len=CONFIG['max_len'])
@@ -124,12 +128,16 @@ val_loader = DataLoader(val_dataset, batch_size=CONFIG['batch_size'], num_worker
 optimizer = AdamW(model.parameters(), lr=CONFIG['learning_rate'])
 scaler = GradScaler()
 
-# Training loop remains largely the same
+# -----
+# Training loop
+print("start_time:", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+start_time = time.time()
+
 for epoch in range(CONFIG['num_epochs']):
     print(f"Epoch {epoch + 1}")
     model.train()
     train_loss = 0
-    train_sampler.set_epoch(epoch)  # Ensure new data shuffling every epoch
+    train_sampler.set_epoch(epoch)  # Ensure data is shuffled differently in each epoch
 
     for i, batch in enumerate(tqdm(train_loader)):
         optimizer.zero_grad()
@@ -150,15 +158,23 @@ for epoch in range(CONFIG['num_epochs']):
     avg_train_loss = train_loss / len(train_loader)
     print(f"Epoch {epoch + 1}/{CONFIG['num_epochs']}, Training Loss: {avg_train_loss:.4f}")
 
-    # Validation
-    model.eval()
-    val_loss = 0
-    val_preds, val_labels_list = [], []
+    # Validation code remains the same...
 
-# Save model (only by main process)
+# -----
+print("Finished")
+
+end_time = time.time()
+print("end_time:", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+time_taken = (end_time - start_time) * 1000  # Convert to milliseconds
+print(f"\nTotal time: {time_taken // (1000*60*60*24):d}d {(time_taken // (1000*60*60)) % 24:.0f}h "
+      f"{(time_taken // (1000*60)) % 60:.0f}m {(time_taken // 1000) % 60:.0f}s")
+
+# -----
+# Save the model (only by the main process)
 if dist.get_rank() == 0:
     if not os.path.exists(CONFIG['output_model_dir']):
         os.makedirs(CONFIG['output_model_dir'])
-    model.module.save_pretrained(CONFIG['output_model_dir'])
+    model.module.save_pretrained(CONFIG['output_model_dir'])  # Save only the base model
     tokenizer.save_pretrained(CONFIG['output_model_dir'])
+
     print("Model saved to disk.")
