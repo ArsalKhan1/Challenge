@@ -190,6 +190,16 @@ export const useChatStore = create<ChatStore>()(
           }
         });
       },
+      // New function to handle appending chunks for streaming response
+      appendToBotResponse(chunk) {
+        get().updateCurConversation((conversation) => {
+            const messages = conversation.messages;
+            const lastMessage = messages[messages.length - 1];
+            if (lastMessage.type === 'assistant') {
+            lastMessage.content += chunk;  // Append the chunk to the existing content
+            }
+        });
+      },
 
       workerMessageCb(data) {
         if (data.type === 'initing') {
