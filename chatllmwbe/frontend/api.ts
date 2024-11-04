@@ -1,22 +1,61 @@
 // added by me
 
-// v2: points to local backend
-export async function fetchLLMResponse(message: string, model: string, stream: boolean = false) {
-    const response = await fetch("http://127.0.0.1:5000/api/chat", {  // Backend URL
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message, model, stream }),
-    });
+// v3:
+// utils/api.ts
 
-    if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
+export async function getLLMResponse(
+    message: string,
+    model: string,
+    onData: (data: string) => void
+  ) {
+    const response = await fetch("http://127.0.0.1:5000/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message,
+        model,
+        stream: true,  // Enable streaming
+      }),
+    });
+  
+    if (!response.body) {
+      throw new Error("No response body");
     }
+  
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let done = false;
+  
+    while (!done) {
+      const { value, done: doneReading } = await reader.read();
+      done = doneReading;
+      const chunkValue = decoder.decode(value);
+      onData(chunkValue);
+    }
+  }
+  
+
+
+
+// v2: points to local backend
+// export async function fetchLLMResponse(message: string, model: string, stream: boolean = false) {
+//     const response = await fetch("http://127.0.0.1:5000/api/chat", {  // Backend URL
+//         method: "POST",
+//         headers: {
+//             "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({ message, model, stream }),
+//     });
+
+//     if (!response.ok) {
+//         throw new Error(`Error: ${response.statusText}`);
+//     }
     
-    const data = await response.json();
-    return data.response;  // Handle response
-}
+//     const data = await response.json();
+//     return data.response;  // Handle response
+// }
 
 
 
