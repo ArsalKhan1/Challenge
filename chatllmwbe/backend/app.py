@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify, Response
-from genai_gateway.api import get_llm_response
+from api import get_llm_response
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
@@ -29,4 +31,4 @@ def chat():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(port=5000, debug=True)
